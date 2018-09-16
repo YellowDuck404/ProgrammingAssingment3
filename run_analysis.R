@@ -1,12 +1,34 @@
-
+## Below script prepars tidy data that can be used for later analysis. 
+## Data available:
+##   https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip 
+## 
+## Script will:
+##   0. Download and unzip required dataset in working directory.
+##   1. Read and merge required files.
+##   2. Extract only the mean and standard deviation for each measurement.
+##   3. Uses descriptive activity names.
+##   4. Clean descriptive activity names.
+##   5. Creates a second, independent tidy data set.
+##   6. Saves results to flaf file.
 
 library(data.table)
 library(dplyr)
 library(reshape2)
 
-## directory to files
-file_dir <- paste0(getwd(), "\\UCI HAR Dataset\\")
-# "C://D/Coursera/DataScience/workspace/data/course2project/UCI HAR Dataset/"
+## step 0. Download and unzip dataset
+# directory to files
+fileName <- "getdata_dataset.zip"
+
+# Download and unzip the dataset
+if (!file.exists(fileName)){
+  fileURL <- "https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
+  download.file(fileURL, fileName, mode = "wb")
+}
+if (!file.exists("UCI HAR Dataset")) {
+  unzip(fileName)
+}
+
+file_dir <- paste0(getwd(), "/UCI HAR Dataset/")
 
 read_my_data <- function(file_dir, type, activity_names, feature_names) {
   
@@ -15,7 +37,7 @@ read_my_data <- function(file_dir, type, activity_names, feature_names) {
   my_file_dir1 <- paste0(file_dir, type)
   # subject_*.txt file
   subject <- read.table(
-    file = paste0(my_file_dir1, "\\subject_", type, ".txt"), 
+    file = paste0(my_file_dir1, "/subject_", type, ".txt"), 
     header = FALSE, 
     sep = " ",
     col.names = c("SubjectId")
@@ -25,7 +47,7 @@ read_my_data <- function(file_dir, type, activity_names, feature_names) {
   
   # y_*.txt file
   activity <- read.table(
-    file = paste0(my_file_dir1, "\\y_", type, ".txt"), 
+    file = paste0(my_file_dir1, "/y_", type, ".txt"), 
     header = FALSE, 
     sep = " ",
     col.names = c("ActivityId")
@@ -35,7 +57,7 @@ read_my_data <- function(file_dir, type, activity_names, feature_names) {
   
   # X_*.txt file
   data <- read.table(
-    file = paste0(my_file_dir1, "\\X_", type, ".txt"), 
+    file = paste0(my_file_dir1, "/X_", type, ".txt"), 
     header = FALSE,
     col.names = feature_names$featurename
   )
@@ -51,14 +73,14 @@ read_my_data <- function(file_dir, type, activity_names, feature_names) {
 
 # read activity_labels.txt file
 ActivityNames <- read.table(
-  file = paste0(file_dir, "./activity_labels.txt"), 
+  file = paste0(file_dir, "activity_labels.txt"), 
   header = FALSE, sep = " ", 
   col.names = c("ActivityId", "ActivityName")
   )
 
 # read features.txt file
 feature_names <- read.table(
-  file = paste0(file_dir, "./features.txt"), 
+  file = paste0(file_dir, "features.txt"), 
   header = FALSE, sep = " ", 
   col.names = c("featureid", "featurename")
 )
@@ -76,7 +98,7 @@ data1 <- rbind(test_data, train_data)
 
 # step 2.	Extracts only the measurements on the mean and standard deviation for each measurement. 
 
-colnames_selection <- grep(".*mean\\(\\)|.*std\\(\\)", feature_names$featurename, ignore.case = TRUE)
+colnames_selection <- grep(".*mean()|.*std()", feature_names$featurename, ignore.case = TRUE)
 
 data2 <- select(data1, contains("SubjectId"), contains("ActivityId"), colnames_selection+2)
 
@@ -106,7 +128,6 @@ data5melt <- melt(data3, id = c("SubjectId", "ActivityName"), measure.vars = mea
 
 # casting data frames
 data5 <- dcast(data5melt, SubjectId + ActivityName ~ variable, mean)
-head(data5)
 
 # step 6. Save results to flaf file
 filedate <- Sys.Date()
